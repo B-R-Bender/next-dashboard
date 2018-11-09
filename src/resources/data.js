@@ -2,24 +2,20 @@ let namePrefix = "";
 
 export function generateMockData (directory = 3, files = 100) {
     const data = [];
-    for (let directoryIndex = 0; directoryIndex < directory; directoryIndex++) {
-        const directory = {
-            id: `${directoryIndex}`,
-            name: `${namePrefix}dir ${directoryIndex}`,
-            directory: true,
+    for (let categoryIndex = 0; categoryIndex < directory; categoryIndex++) {
+        const category = {
+            id: `${categoryIndex}`,
+            name: `${namePrefix}category ${categoryIndex}`,
             open: false,
-            children: []
+            items: []
         };
-        for (let fileIndex = 0; fileIndex < files; fileIndex++) {
-            directory.children.push({
-                id: `${directoryIndex}-${fileIndex}`,
-                name: `${namePrefix}file ${directoryIndex}-${fileIndex}`,
-                directory: false,
-                open: false,
-                children: null
+        for (let chanelIndex = 0; chanelIndex < files; chanelIndex++) {
+            category.items.push({
+                id: `${categoryIndex}-${chanelIndex}`,
+                name: `${namePrefix}chanel ${categoryIndex}-${chanelIndex}`,
             });
         }
-        data.push(directory)
+        data.push(category)
     }
     return data;
 }
