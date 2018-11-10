@@ -6,13 +6,14 @@ export function generateMockData (directory = 3, files = 100) {
         const category = {
             id: `${categoryIndex}`,
             name: `${namePrefix}category ${categoryIndex}`,
-            open: false,
-            items: []
+            channels: []
         };
-        for (let chanelIndex = 0; chanelIndex < files; chanelIndex++) {
-            category.items.push({
-                id: `${categoryIndex}-${chanelIndex}`,
-                name: `${namePrefix}chanel ${categoryIndex}-${chanelIndex}`,
+        for (let channelIndex = 0; channelIndex < files; channelIndex++) {
+            category.channels.push({
+                id: `${categoryIndex}-${channelIndex}`,
+                name: `${namePrefix}channel ${categoryIndex}-${channelIndex}`,
+                selected: false,
+                path: [categoryIndex, "channels", channelIndex]
             });
         }
         data.push(category)

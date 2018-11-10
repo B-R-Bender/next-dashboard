@@ -1,105 +1,144 @@
 import React from "react";
 import PropTypes from "prop-types";
-import withStyles from "@material-ui/core/styles/withStyles";
-import Lock from "@material-ui/icons/Lock";
-import LockOpen from "@material-ui/icons/LockOpen";
-import Disconnect from "@material-ui/icons/SettingsInputComponent";
-import Connect from "@material-ui/icons/SettingsInputComponentTwoTone";
-import Right from "@material-ui/icons/ArrowRight";
-import Left from "@material-ui/icons/ArrowLeft";
-import Delete from "@material-ui/icons/Delete";
-import More from "@material-ui/icons/MoreHoriz";
-import Grid from "@material-ui/core/Grid";
-import Paper from "@material-ui/core/Paper/Paper";
-import Button from "@material-ui/core/Button/Button";
-
-import styles from "./ControlDeck.styles";
-import FormControlLabel from "@material-ui/core/FormControlLabel/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox/Checkbox";
-import Typography from "@material-ui/core/Typography/Typography";
+import {Map} from "immutable";
+import _ from "lodash/string";
+import ListUI from "@material-ui/core/List/List";
+import ListItem from "@material-ui/core/ListItem/ListItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon/ListItemIcon";
+import Tooltip from "@material-ui/core/Tooltip/Tooltip";
 import Chip from "@material-ui/core/Chip/Chip";
-import Avatar from "@material-ui/core/Avatar/Avatar";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction/ListItemSecondaryAction";
 import IconButton from "@material-ui/core/IconButton/IconButton";
+import ListItemText from "@material-ui/core/ListItemText/ListItemText";
+import Divider from "@material-ui/core/Divider/Divider";
+import Forward from "@material-ui/icons/ArrowForward";
+import Back from "@material-ui/icons/ArrowBack";
+import Delete from "@material-ui/icons/Delete";
+import LockOpen from "@material-ui/icons/LockOpen";
+import Lock from "@material-ui/icons/Lock";
+import Bandwidth from "@material-ui/icons/AssessmentOutlined";
+import Connect from "@material-ui/icons/SettingsInputComponentTwoTone";
+import Disconnect from "@material-ui/icons/SettingsInputComponent";
+import Adjust from "@material-ui/icons/Adjust";
+import More from "@material-ui/icons/MoreHoriz";
 
-class ControlDeck extends React.Component {
-    constructor(props) {
-        super(props);
+import {MOCK_FUNCTION, LINK} from "../../constants"
+
+const handleName = name => {
+    let truncatedName = name;
+    let tooltip = "No channel selected";
+    if (name !== null) {
+        truncatedName = _.truncate(name, {length: 25});
+        tooltip = name;
     }
+    return {truncatedName, tooltip}
+};
 
-    render() {
-        const {classes} = this.props;
+const ControlDeck = props => {
+    const {link, handleSourceDelete, handleDestinationDelete, handleConnect} = props;
+    const {
+        truncatedName: sourceName,
+        tooltip: sourceTooltip
+    } = handleName(link.get(LINK.SOURCE_NAME));
+    const {
+        truncatedName: destinationName,
+        tooltip: destinationTooltip
+    } = handleName(link.get(LINK.DESTINATION_NAME));
+    const locked = link.get(LINK.LOCKED);
+    const bandwidth = link.get(LINK.BANDWIDTH);
+    const connected = link.get(LINK.CONNECTED);
 
-        return (
-            <Paper className={classes.container}>
-                <div className={classes.contentContainer}>
-                    <div style={{width: "80%", display: "flex"}}>
-                        <div style={{width: "2em"}}>
-                            <IconButton>
-                                <More/>
-                            </IconButton>
-                        </div>
-                        <div style={{flexGrow: 1, display: "flex", justifyContent: "center"}}>
-                            <Chip icon={<Delete/>}
-                                  style={{margin: "0 0.5em"}}
-                                  label="Source Item Name"
-                                  clickable
-                                  color="primary"
-                                  onDelete={() => console.log("Debug log: \n", "delete")}
-                                  deleteIcon={<Right/>}
-                            />
+    return (
+        <ListUI>
+            <ListItem key={"source"}>
+                <ListItemIcon><Back/></ListItemIcon>
+                <Tooltip title={sourceTooltip} placement={"bottom"}>
+                    <Chip clickable
+                          color={"primary"}
+                          variant={sourceName === null ? "outlined" : "default"}
+                          label={sourceName === null ? "Source channel" : sourceName}/>
+                </Tooltip>
+                <ListItemSecondaryAction>
+                    <IconButton disabled={sourceName === null}
+                                onClick={() => handleSourceDelete()}>
+                        <Delete/>
+                    </IconButton>
+                </ListItemSecondaryAction>
+            </ListItem>
+            <ListItem key={"destination"}>
+                <ListItemIcon><Forward/></ListItemIcon>
+                <Tooltip title={destinationTooltip} placement={"bottom"}>
+                    <Chip clickable
+                      color={"primary"}
+                      variant={destinationName === null ? "outlined" : "default"}
+                      label={destinationName === null ? "Destination channel" : destinationName}/>
+                </Tooltip>
+                <ListItemSecondaryAction>
+                    <IconButton disabled={destinationName === null}
+                                onClick={() => handleDestinationDelete()}>
+                        <Delete/>
+                    </IconButton>
+                </ListItemSecondaryAction>
+            </ListItem>
 
-                            <Chip icon={<Left/>}
-                                  style={{margin: "0 0.5em"}}
-                                  label="Destination Item Name"
-                                  clickable
-                                  color="primary"
-                                  onDelete={() => console.log("Debug log: \n", "delete")}
-                                  deleteIcon={<Delete/>}
-                            />
-                        </div>
-                    </div>
-                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: "20%"}}>
-                        <FormControlLabel label="Locked status"
-                                          disabled
-                                          control={
-                                              <Checkbox icon={<LockOpen/>} checkedIcon={<Lock/>} value="checkedH"/>
-                                          }/>
-                        <Button disableRipple variant={"extendedFab"} style={{marginBottom: "1em"}}>
-                            {`bandwidth ${330000}`}
-                        </Button>
-                    </div>
-                </div>
-                <div className={classes.contentContainer}>
-                    <Grid container spacing={8} justify={"space-around"}>
-                        <Grid item xs>
-                            <Button color={"primary"} variant={"contained"} className={classes.controlsButton}>
-                                Connect
-                                <Connect className={classes.connectIcon}/>
-                            </Button>
-                        </Grid>
-                        <Grid item xs>
-                            <Button variant={"contained"} className={classes.controlsButton}>
-                                Adjust source
-                            </Button>
-                        </Grid>
-                        <Grid item xs>
-                            <Button variant={"contained"} className={classes.controlsButton}>
-                                Adjust destination
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </div>
-            </Paper>
-        );
-    };
-}
+            <ListItem key={"locked"}>
+                <ListItemIcon>{locked ? <Lock/> : <LockOpen/>}</ListItemIcon>
+                <ListItemText primary={locked ? "Locked" : "Unlocked"}/>
+            </ListItem>
+            <ListItem button={bandwidth !== null} key={"bandwidth"}>
+                <ListItemIcon><Bandwidth/></ListItemIcon>
+                <ListItemText primary={bandwidth === null ? "No bandwidth data" : bandwidth}/>
+            </ListItem>
+
+            <Divider/>
+
+            <ListItem button key={"connect"} onClick={handleConnect}>
+                <ListItemIcon>{connected ? <Disconnect/> : <Connect/>}</ListItemIcon>
+                <ListItemText primary={connected ? "Disconnect" : "Connect"}/>
+            </ListItem>
+
+            <Divider/>
+
+            <ListItem button key={"adjust source"}>
+                <ListItemIcon><Adjust/></ListItemIcon>
+                <ListItemText primary={"Adjust source"}/>
+            </ListItem>
+            <ListItem button key={"adjust destination"}>
+                <ListItemIcon><Adjust/></ListItemIcon>
+                <ListItemText primary={"Adjust destination"}/>
+            </ListItem>
+
+            <Divider/>
+
+            <ListItem button key={"select"}>
+                <ListItemIcon><More/></ListItemIcon>
+                <ListItemText primary={"Select"}/>
+            </ListItem>
+        </ListUI>
+    );
+};
 
 ControlDeck.propTypes = {
-    classes: PropTypes.object.isRequired
+    link: PropTypes.instanceOf(Map),
+    handleSourceDelete: PropTypes.func,
+    handleDestinationDelete: PropTypes.func,
+    handleConnect: PropTypes.func
 };
 
 ControlDeck.defaultProps = {
-    classes: {}
+    link: Map({
+        id: null,
+        sourceId: null,
+        sourceName: null,
+        destinationId: null,
+        destinationName: null,
+        locked: false,
+        bandwidth: null,
+        connected: false
+    }),
+    handleSourceDelete: MOCK_FUNCTION,
+    handleDestinationDelete: MOCK_FUNCTION,
+    handleConnect: MOCK_FUNCTION
 };
 
-export default withStyles(styles)(ControlDeck);
+export default ControlDeck;

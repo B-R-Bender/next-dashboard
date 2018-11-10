@@ -1,104 +1,174 @@
-import React, {Fragment} from "react";
+import React from "react";
+import Grid from "@material-ui/core/Grid/Grid";
+import Drawer from "@material-ui/core/Drawer/Drawer";
+import withStyles from "@material-ui/core/styles/withStyles";
+import queryString from "query-string";
+import {fromJS, Map} from "immutable";
 
 import {generateMockDataWithPrefix} from "../../resources/data";
 
+import {CHANNEL, LINK} from "../../constants";
+import styles from "./Dashboard.styles";
+
 import ControlDeck from "../../components/ControlDeck";
-import FilesDeck from "../../components/FilesDeck";
-import Grid from "@material-ui/core/Grid/Grid";
-import Paper from "@material-ui/core/Paper/Paper";
-import Drawer from "@material-ui/core/Drawer/Drawer";
-import Divider from "@material-ui/core/Divider/Divider";
-import List from "@material-ui/core/List/List";
-import ListItem from "@material-ui/core/ListItem/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon/ListItemIcon";
-import ListItemText from "@material-ui/core/ListItemText/ListItemText";
-import InboxIcon from "@material-ui/icons/Inbox";
-import MailIcon from "@material-ui/icons/Mail";
-import Chip from "@material-ui/core/Chip/Chip";
-import Delete from "@material-ui/icons/Delete";
-import Right from "@material-ui/icons/ArrowRight";
-import Left from "@material-ui/icons/ArrowLeft";
-import FormControlLabel from "@material-ui/core/FormControlLabel/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox/Checkbox";
-import LockOpen from "@material-ui/icons/LockOpen";
-import Lock from "@material-ui/icons/Lock";
+import ChannelsDeck from "../../components/ChannelsDeck";
+
+const loadLink = new Promise(resolve => {
+    setTimeout(() => {
+        resolve({
+            id: "1",
+            sourceId: "1-1",
+            sourceName: "Source 1-1",
+            destinationId: "2-10",
+            destinationName: "Destination 2-10",
+            locked: true,
+            bandwidth: "330000",
+            connected: true
+        });
+    }, 1000)
+});
+
+const loadCategories = new Promise(resolve => {
+    setTimeout(() => {
+        resolve({
+            source: generateMockDataWithPrefix("source ", 5, 12),
+            destination: generateMockDataWithPrefix("destination ", 3, 15)
+        });
+    }, 1000)
+});
+
 
 class DashboardScreen extends React.Component {
 
-    loadData = () => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve({
-                    source: generateMockDataWithPrefix("source ", 5, 12),
-                    destination: generateMockDataWithPrefix("destination ", 3, 15)
-                });
-            }, 1000)
-        })
+    constructor(props) {
+        super(props);
+        const {id} = queryString.parse(props.location.search);
+        this.state = {
+            link: Map({
+                id: null,
+                sourceId: null,
+                sourceName: null,
+                destinationId: null,
+                destinationName: null,
+                locked: false,
+                bandwidth: null,
+                connected: false
+            }),
+            source: null,
+            sourcePath: null,
+            destination: null,
+            destinationPath: null
+        };
+        this.loadData(id);
+        this.handleSource = this.handleChannelChanged(true);
+        this.handleDestination = this.handleChannelChanged(false);
+    }
+
+/*
+    static getChannelName = (categories, id) => {
+        return "Channel name";
+    };
+*/
+
+    loadData = id => {
+        if (id) {
+            Promise.all([loadLink, loadCategories])
+                .then(responses => {
+                    const link = Map(responses[0]);
+                    const {source, destination} = responses[1];
+                    // const sourceName = DashboardScreen.getChannelName(source, link.sourceId);
+                    // const destinationName = DashboardScreen.getChannelName(destination, link.destinationId);
+                    this.setState({
+                        link,
+                        source: fromJS(source),
+                        destination: fromJS(destination)
+                    });
+                })
+                .catch(error => console.log("Debug log: ", error.message));
+        } else {
+            loadCategories
+                .then(response => this.setState({
+                    source: fromJS(response.source),
+                    destination: fromJS(response.destination)
+                }))
+                .catch(error => console.log("Debug log: ", error.message));
+        }
     };
 
-    render() {
-        return (
-            <Fragment>
-                <Drawer variant="permanent"
-                        anchor="right">
-                    <div>
-                        <Chip icon={<Delete/>}
-                              style={{margin: "0.5em"}}
-                              label="Source Item Name"
-                              clickable
-                              color="primary"
-                              onDelete={() => console.log("Debug log: \n", "delete")}
-                              deleteIcon={<Right/>}
-                        />
-                    </div>
-                    <div>
-                        <Chip icon={<Left/>}
-                              style={{margin: "0.5em"}}
-                              label="Destination Item Name"
-                              clickable
-                              color="primary"
-                              onDelete={() => console.log("Debug log: \n", "delete")}
-                              deleteIcon={<Delete/>}
-                        />
-                    </div>
-                    <Divider/>
-                    <List>
-                        <ListItem button key={1}>
-                            <ListItemIcon>{<InboxIcon/> : <MailIcon/>}</ListItemIcon>
-                            <ListItemText primary={text}/>
-                        </ListItem>
-                    </List>
-                    <Divider/>
-                    <List>
-                        <ListItem button key={1}>
-                            <ListItemIcon><LockOpen/></ListItemIcon>
-                            <ListItemText primary={"Locked status"}/>
-                        </ListItem>
-                        <ListItem button key={2}>
+    handleChannelChanged = toSource => channel => this.setState(prevState => {
+        let {link, source, sourcePath, destination, destinationPath} = prevState;
+        let id = null;
+        let name = null;
+        let newPath = null;
+        if (channel !== undefined && channel !== null) {
+            id = channel.get(CHANNEL.ID);
+            name = channel.get(CHANNEL.NAME);
+            newPath = channel.get(CHANNEL.PATH);
+        }
+        if (toSource) {
+            link = link.set(LINK.SOURCE_ID, id);
+            link = link.set(LINK.SOURCE_NAME, name);
+            if (sourcePath !== null) {
+                source = source.setIn(sourcePath.push(CHANNEL.SELECTED), false);
+            }
+            if (newPath !== null) {
+                source = source.setIn(newPath.push(CHANNEL.SELECTED), true);
+            }
+            sourcePath = newPath;
+        } else {
+            link = link.set(LINK.DESTINATION_ID, id);
+            link = link.set(LINK.DESTINATION_NAME, name);
+            if (destinationPath !== null) {
+                destination = destination.setIn(destinationPath.push(CHANNEL.SELECTED), false);
+            }
+            if (newPath !== null) {
+                destination = destination.setIn(newPath.push(CHANNEL.SELECTED), true);
+            }
+            destinationPath = newPath;
+        }
 
-                            <ListItemText primary={`bandwidth ${330000}`}/>
-                        </ListItem>
-                    </List>
+        return {
+            link,
+            source,
+            sourcePath,
+            destination,
+            destinationPath
+        };
+    });
+
+    render() {
+        const {classes} = this.props;
+        const {link, source, destination} = this.state;
+
+        return (
+            <div className={classes.root}>
+                <Drawer variant={"permanent"}
+                        anchor={"left"}
+                        className={classes.drawer}
+                        classes={{
+                            paper: classes.drawerPaper
+                        }}>
+                    <ControlDeck link={link}
+                                 handleSourceDelete={this.handleSource}
+                                 handleDestinationDelete={this.handleDestination}/>
                 </Drawer>
-                <Grid container direction={"column"} spacing={16} style={{flexGrow: 1, padding: "1em"}}>
-                    <Grid item xs={12}>
-                        <ControlDeck/>
-                    </Grid>
-                    <Grid item container
-                          spacing={16}
-                          justify={"center"} alignItems={"stretch"}
-                          style={{flexGrow: 1}}>
+                <main className={classes.contentContainer}>
+                    <Grid container
+                          className={classes.contentGrid}
+                          spacing={16} justify={"center"} alignItems={"stretch"}>
                         <Grid item xs>
-                            <Paper style={{height: "100%"}}/>
+                            <ChannelsDeck categories={source}
+                                          handleChannelClick={this.handleSource}/>
                         </Grid>
                         <Grid item xs>
-                            <Paper style={{height: "100%"}}/>
+                            <ChannelsDeck categories={destination}
+                                          handleChannelClick={this.handleDestination}/>
                         </Grid>
                     </Grid>
-                </Grid>
-            </Fragment>
+                </main>
+            </div>
         );
     }
 }
 
-export default DashboardScreen;
+export default withStyles(styles)(DashboardScreen);
